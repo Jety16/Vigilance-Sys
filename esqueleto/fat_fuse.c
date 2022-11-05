@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 
     // add the new fat tree to the vol.
     vol->file_tree = fat_tree_insert(vol->file_tree, root_node, new_file);
-
+    fat_fuse_log_activity( "a",new_file, vol);
 
     // Call fuse_main() to pass control to FUSE.  This will daemonize the
     // process, causing it to detach from the terminal.  fat_volume_unmount()

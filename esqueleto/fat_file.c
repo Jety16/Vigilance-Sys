@@ -474,8 +474,7 @@ void fat_file_truncate(fat_file file, off_t offset, fat_file parent) {
     // TODO [optional]
     // If the file size is smaller than length, bytes between the old and
     // new lengths are read as zeros.
-    last_cluster =
-        fat_table_seek_cluster(file->table, file->start_cluster, offset);
+    last_cluster = fat_table_seek_cluster(file->table, file->start_cluster, offset);
     if (errno != 0) {
         return;
     }
@@ -535,15 +534,18 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf,
 
     if (offset > file->dentry->file_size) {
         errno = EOVERFLOW;
+        DEBUG("%ld, %d\n\n", offset, file->dentry->file_size);
         return 0;
     }
     // Move cluster to first cluster to write
     if (offset != 0) {
         starting_point = offset - 1;
     }
+
     cluster = fat_table_seek_cluster(
         file->table, file->start_cluster,
         starting_point); // originally offset - (offset != 0)
+    
     if (offset % fat_table_bytes_per_cluster(file->table) == 0 &&
         cluster != 0 && offset != 0) {
         cluster = next_or_new_cluster(file, cluster);
@@ -551,7 +553,9 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf,
     if (errno != 0) {
         return -errno;
     }
+
     while (bytes_remaining > 0) { // There are still bytes to write
+
         DEBUG("Next cluster to write %u %ld", cluster, bytes_remaining);
         bytes_to_write_cluster = fat_table_get_cluster_remaining_bytes(
             file->table, bytes_remaining, offset);
