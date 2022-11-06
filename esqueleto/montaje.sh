@@ -42,5 +42,6 @@ if [ "$1" == "help" ]; then
 	Para desmontar: './montaje.sh um'.
 	Para testing: './montaje.sh test' (desmonta, make clean, make y monta de nuevo). 
 	Para testing y entrar al archivo: './montaje.sh test see'.
+	Para restaurar la imagen: './montaje.sh restore'
 	Para ayuda: './mont.sh help'."
 fi
