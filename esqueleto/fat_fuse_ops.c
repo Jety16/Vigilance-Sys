@@ -324,14 +324,14 @@ int fat_fuse_unlink(const char *path){
     
     fat_file file = fat_tree_get_file(file_node);
 
-    if (!fat_file_is_directory(file)) {
+    if (fat_file_is_directory(file)) {
         errno = ENOENT;
         return -errno;
     }
  
     fat_file parent = fat_tree_get_parent(file_node);
 
-    // Update parentÂ´s directory and save changes on disk
+    // Update parent´s directory and save changes on disk
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
 
