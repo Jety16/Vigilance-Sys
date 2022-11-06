@@ -314,9 +314,6 @@ int fat_fuse_truncate(const char *path, off_t offset) {
 
 int fat_fuse_unlink(const char *path){
     errno = 0;
-
-    //CHECKEAR QUE SEA UN ARCHIVOOOOOO  
-    
     fat_volume vol = get_fat_volume();
     fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
     
@@ -324,38 +321,20 @@ int fat_fuse_unlink(const char *path){
         errno = ENOENT;
         return -errno;
     }
+
     fat_file file = fat_tree_get_file(file_node);
-    //dir entry 
+ 
     fat_file parent = fat_tree_get_parent(file_node);
-    //file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
-    
+
+    //actualizacion en el directorio del padre y bajada a disco
+    file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
 
     //ESTA PARTE ESTA MARCANDO COMO LIBRES TODOS LOS CLUSTERS
     fat_fuse_truncate(path,0); // se marca como libre el primer cluster?
-    //u32 cluster = file->start_cluster;
-    //file->table[cluster] = 0; //borrar de la tabla el primer cluster
-                                                       //marco como libre el primer cluster
-    //  todo esto es parte de la FAT table
-
-
-
-    
-    
-    
-    //parent->dentry[file->pos_in_parent]= 0x00000000;
-    
-    
-
-
-
 
     //Actualizar el arbol de directorios 
     fat_tree_delete(vol->file_tree, path);
     
     return -errno;
-
-
-
-
 }
