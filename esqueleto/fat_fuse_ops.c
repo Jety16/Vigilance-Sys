@@ -53,8 +53,11 @@ void fat_fuse_log_activity(char *operation_type, fat_file file,
   // fat_file fs_log = fat_tree_search(tree, "/fs.log");
 
   fat_tree_node fs_node = fat_tree_node_search(fs_vol->file_tree, "/fs.log");
-
   fat_file fs_log = fat_tree_get_file(fs_node);
+  if (fs_log == file) {
+    return;
+  }
+
   off_t offset = fs_log->dentry->file_size;
   fat_file fs_parent = fat_tree_get_parent(fs_node);
   // ver codigos de error
@@ -192,8 +195,6 @@ int fat_fuse_read(const char *path, char *buf, size_t size, off_t offset,
   fat_volume vol;
   vol = get_fat_volume();
 
-  fat_fuse_log_activity("Read", file, vol);
-
   bytes_read = fat_file_pread(file, buf, size, offset, parent);
   if (errno != 0) {
     // acá tmb debería llamar a log_activity
@@ -201,6 +202,8 @@ int fat_fuse_read(const char *path, char *buf, size_t size, off_t offset,
   }
 
   // llamo a log_activity
+  fat_fuse_log_activity("Read", file, vol);
+
   return bytes_read;
 }
 
