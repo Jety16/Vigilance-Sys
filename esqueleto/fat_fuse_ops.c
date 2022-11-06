@@ -34,10 +34,9 @@ static void now_to_str(char *buf) {
   strftime(buf, DATE_MESSAGE_SIZE, "%d-%m-%Y %H:%M", timeinfo);
 }
 
-void fat_fuse_log_activity(char *operation_type, fat_file file, fat_volume fs_vol) {
+void fat_fuse_log_activity(char *operation_type, fat_file file,
+                           fat_volume fs_vol) {
   // buf will save the data of the operation
-
-  DEBUG("\n\n LINEA 52 \n\n");
 
   char buf[LOG_MESSAGE_SIZE] = "";
   now_to_str(buf);
@@ -49,17 +48,15 @@ void fat_fuse_log_activity(char *operation_type, fat_file file, fat_volume fs_vo
   strcat(buf, operation_type);
   strcat(buf, "\n");
   int message_size = strlen(buf);
-  off_t offset = 0;
+  // off_t offset = 0;
   // llamo funcion auxiliar que escriba en fs.log el bufer
   // fat_file fs_log = fat_tree_search(tree, "/fs.log");
-  DEBUG("\n\n LINEA 52 \n\n");
 
   fat_tree_node fs_node = fat_tree_node_search(fs_vol->file_tree, "/fs.log");
-  // fat_tree_node fs_node = (fat_tree_node)fi->fh;
-  DEBUG("\n\n LINEA 57 \n\n");
+
   fat_file fs_log = fat_tree_get_file(fs_node);
+  off_t offset = fs_log->dentry->file_size;
   fat_file fs_parent = fat_tree_get_parent(fs_node);
-  DEBUG("\n\n LINEA 60 \n\n");
   // ver codigos de error
 
   printf("%s\n\n", buf);
@@ -69,20 +66,6 @@ void fat_fuse_log_activity(char *operation_type, fat_file file, fat_volume fs_vo
     EXIT_FAILURE;
   }
 }
-
-///* Write data from a file */
-// int fat_fuse_write_activity(const char *path, const char *buf, size_t size,
-//                            off_t offset, struct fuse_file_info *fi) {
-//  fat_tree_node file_node = (fat_tree_node)fi->fh;
-//  fat_file file = fat_tree_get_file(file_node);
-//  fat_file parent = fat_tree_get_parent(file_node);
-//
-//  // en casos de errores llamo a log_activity?
-//  if (size == 0) return 0;  // Nothing to write
-//  if (offset > file->dentry->file_size) return -EOVERFLOW;
-//  // llamo a log_activity
-//  return fat_file_pwrite(file, buf, size, offset, parent);
-//}
 
 /* Get file attributes (file descriptor version) */
 int fat_fuse_fgetattr(const char *path, struct stat *stbuf,
@@ -205,13 +188,11 @@ int fat_fuse_read(const char *path, char *buf, size_t size, off_t offset,
   int bytes_read;
   fat_tree_node file_node = (fat_tree_node)fi->fh;
   fat_file file = fat_tree_get_file(file_node);
-  fat_file parent = fat_tree_get_parent(file_node);  
+  fat_file parent = fat_tree_get_parent(file_node);
   fat_volume vol;
   vol = get_fat_volume();
 
-  DEBUG("\n\n PRE LOG ACTIVITY \n\n");
   fat_fuse_log_activity("Read", file, vol);
-  DEBUG("\n\n AFTER LOG ACTIVITY \n\n");
 
   bytes_read = fat_file_pread(file, buf, size, offset, parent);
   if (errno != 0) {
