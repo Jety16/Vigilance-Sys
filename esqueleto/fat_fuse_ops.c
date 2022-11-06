@@ -321,19 +321,24 @@ int fat_fuse_unlink(const char *path){
         errno = ENOENT;
         return -errno;
     }
-
+    
     fat_file file = fat_tree_get_file(file_node);
+
+    if (!fat_file_is_directory(file)) {
+        errno = ENOENT;
+        return -errno;
+    }
  
     fat_file parent = fat_tree_get_parent(file_node);
 
-    //actualizacion en el directorio del padre y bajada a disco
+    // Update parent´s directory and save changes on disk
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
 
-    //ESTA PARTE ESTA MARCANDO COMO LIBRES TODOS LOS CLUSTERS
+    // Free (all?) clusters
     fat_fuse_truncate(path,0); // se marca como libre el primer cluster?
 
-    //Actualizar el arbol de directorios 
+    // Update directory tree
     fat_tree_delete(vol->file_tree, path);
     
     return -errno;
