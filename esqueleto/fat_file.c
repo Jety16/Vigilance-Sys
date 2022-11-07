@@ -29,7 +29,7 @@
 //     printf("\t Attributes: %x\n", dentry->attribs);
 // }
 
-static void write_dir_entry(fat_file parent, fat_file file);
+//static void write_dir_entry(fat_file parent, fat_file file);
 
 /* Fills fields last_modified_time, last_modified_date, last_access_date,
  * create_date and create_time of a *in disk* file directory entry @dir_entry,
@@ -297,7 +297,7 @@ void fat_file_to_stbuf(fat_file file, struct stat *stbuf) {
 /********************* DIRECTORY ENTRY METADATA *********************/
 
 /* Writes to disk @child_disk_entry, in the position @nentry of the @parent*/
-static void write_dir_entry(fat_file parent, fat_file file) {
+void write_dir_entry(fat_file parent, fat_file file) {
     // Calculate the starting position of the directory
     u32 chunk_size = fat_table_bytes_per_cluster(parent->table);
     off_t parent_offset =
@@ -474,7 +474,8 @@ void fat_file_truncate(fat_file file, off_t offset, fat_file parent) {
     // TODO [optional]
     // If the file size is smaller than length, bytes between the old and
     // new lengths are read as zeros.
-    last_cluster = fat_table_seek_cluster(file->table, file->start_cluster, offset);
+    last_cluster =
+        fat_table_seek_cluster(file->table, file->start_cluster, offset);
     if (errno != 0) {
         return;
     }
@@ -534,18 +535,15 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf,
 
     if (offset > file->dentry->file_size) {
         errno = EOVERFLOW;
-        DEBUG("%ld, %d\n\n", offset, file->dentry->file_size);
         return 0;
     }
     // Move cluster to first cluster to write
     if (offset != 0) {
         starting_point = offset - 1;
     }
-
     cluster = fat_table_seek_cluster(
         file->table, file->start_cluster,
         starting_point); // originally offset - (offset != 0)
-    
     if (offset % fat_table_bytes_per_cluster(file->table) == 0 &&
         cluster != 0 && offset != 0) {
         cluster = next_or_new_cluster(file, cluster);
@@ -553,9 +551,7 @@ ssize_t fat_file_pwrite(fat_file file, const void *buf,
     if (errno != 0) {
         return -errno;
     }
-
     while (bytes_remaining > 0) { // There are still bytes to write
-
         DEBUG("Next cluster to write %u %ld", cluster, bytes_remaining);
         bytes_to_write_cluster = fat_table_get_cluster_remaining_bytes(
             file->table, bytes_remaining, offset);

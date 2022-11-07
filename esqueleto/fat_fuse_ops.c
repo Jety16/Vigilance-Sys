@@ -316,7 +316,7 @@ int fat_fuse_unlink(const char *path){
     errno = 0;
     fat_volume vol = get_fat_volume();
     fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
-    
+
     if (file_node == NULL || errno != 0) {
         errno = ENOENT;
         return -errno;
@@ -328,18 +328,17 @@ int fat_fuse_unlink(const char *path){
         errno = ENOENT;
         return -errno;
     }
+    // Free (all?) clusters
+    fat_fuse_truncate(path,0); // se marca como libre el primer cluster?
  
     fat_file parent = fat_tree_get_parent(file_node);
 
-    // Update parent´s directory and save changes on disk
+    // Update parentÂ´s directory and save changes on disk
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
 
-    // Free (all?) clusters
-    fat_fuse_truncate(path,0); // se marca como libre el primer cluster?
-
     // Update directory tree
     fat_tree_delete(vol->file_tree, path);
-    
+
     return -errno;
 }

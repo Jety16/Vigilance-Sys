@@ -51,6 +51,7 @@ struct fuse_operations fat_fuse_operations = {
     .utime = fat_fuse_utime,
     .truncate = fat_fuse_truncate,
     .write = fat_fuse_write,
+    .unlink = fat_fuse_unlink,
 };
 
 int main(int argc, char **argv) {
@@ -127,21 +128,6 @@ int main(int argc, char **argv) {
         fat_error("Failed to mount FAT volume \"%s\": %m", volume);
         return 1;
     }
-
-    errno = 0;
-    fat_file new_file;
-    fat_tree_node root_node;
-    // Create file
-    new_file = fat_file_init(vol->table, false, strdup("/fs.log"));
-    if (errno < 0) {
-        return -errno;
-    }
-    // get root node
-    root_node = fat_tree_node_search(vol->file_tree, "/");
-
-    // add the new fat tree to the vol.
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, new_file);
-    fat_fuse_log_activity( "a",new_file, vol);
 
     // Call fuse_main() to pass control to FUSE.  This will daemonize the
     // process, causing it to detach from the terminal.  fat_volume_unmount()

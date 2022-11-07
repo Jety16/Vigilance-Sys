@@ -46,7 +46,9 @@ Luego, pueden correr todo con:
       $ cd fat-fuse
       $ make
       $ mkdir mnt
-      $ ./fat-fuse path/to/fsfat.img ./mnt
+      $ ./fat-fuse path/to/fsfat.img ./mnt // ./fat-fuse ../resources/bb_fs.img  ./mnt/
+
+
 
 Para desmontar el sistema, correr:
       $ fusermount -u ./mnt
