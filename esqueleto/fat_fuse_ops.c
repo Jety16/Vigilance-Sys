@@ -323,7 +323,6 @@ int fat_fuse_unlink(const char *path){
     }
     
     fat_file file = fat_tree_get_file(file_node);
-
     if (fat_file_is_directory(file)) {
         errno = ENOENT;
         return -errno;
@@ -338,7 +337,8 @@ int fat_fuse_unlink(const char *path){
     write_dir_entry(parent, file);
 
     // Update directory tree
-    fat_tree_delete(vol->file_tree, path);
+    vol->file_tree = fat_tree_delete(vol->file_tree, path);
+    //fat_file_destroy(file);
 
     return -errno;
 }

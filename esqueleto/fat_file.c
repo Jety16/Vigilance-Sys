@@ -335,6 +335,7 @@ void fat_utime(fat_file file, fat_file parent, const struct utimbuf *buf) {
 
 void fat_file_dentry_add_child(fat_file parent, fat_file child) {
     u32 nentries = parent->dir.nentries;
+    child->pos_in_parent = nentries;
     write_dir_entry(parent, child);
     if (errno != 0) {
         return;
