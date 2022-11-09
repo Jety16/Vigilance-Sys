@@ -323,16 +323,13 @@ int fat_fuse_unlink(const char *path){
     }
     
     fat_file file = fat_tree_get_file(file_node);
-    if (fat_file_is_directory(file)) {
-        errno = ENOENT;
-        return -errno;
-    }
+
     // Free (all?) clusters
     fat_fuse_truncate(path,0); // se marca como libre el primer cluster?
  
     fat_file parent = fat_tree_get_parent(file_node);
 
-    // Update parentÂ´s directory and save changes on disk
+    // Update parent´s directory and save changes on disk
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, file);
 
@@ -341,4 +338,35 @@ int fat_fuse_unlink(const char *path){
     //fat_file_destroy(file);
 
     return -errno;
+}
+
+int fat_fuse_rmdir(const char *path) {
+    errno = 0;
+
+    fat_volume vol = get_fat_volume();
+    fat_tree_node dir_node = fat_tree_node_search(vol->file_tree, path);
+    fat_file dir = fat_tree_get_file(dir_node);
+    if (!fat_file_is_directory(dir)) {
+        errno = ENOTDIR;
+        return -errno;
+    }
+
+    GList *children_list = fat_file_read_children(dir);
+
+    for(unsigned int i = 0; i < g_list_length(children_list); i++) {
+        unlink(g_list_nth_data(children_list,i));
+    }
+
+    g_list_free(children_list);
+
+    fat_file parent = fat_tree_get_parent(dir_node);
+
+    // Update parent´s directory and save changes on disk
+    dir->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
+    write_dir_entry(parent, dir);
+    unlink(dir->filepath);
+    vol->file_tree = fat_tree_delete(vol->file_tree, path);
+    
+
+    return -errno; 
 }
