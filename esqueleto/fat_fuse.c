@@ -7,6 +7,8 @@
 #include <alloca.h>
 #include <errno.h>
 #include <getopt.h>
+#include <gmodule.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -51,6 +53,47 @@ struct fuse_operations fat_fuse_operations = {
     .write = fat_fuse_write,
 };
 
+void create_fs_file(fat_volume vol) {
+  char *fs_path = "/fs.log";
+  fat_file root_file, fs_file;
+  fat_tree_node root_node;
+  bool fs_exists = false;
+  root_node = fat_tree_node_search(vol->file_tree, dirname(strdup(fs_path)));
+
+  root_file = fat_tree_get_file(root_node);
+  fat_error("root_file->children_read %d", root_file->children_read);
+
+  fat_file iterate;
+  GList *children_list = fat_file_read_children(root_file);
+  for (GList *l = children_list; l != NULL; l = l->next) {
+    fat_error("root_file->children_read %d", root_file->children_read);
+    iterate = (fat_file)l->data;
+    vol->file_tree =
+        fat_tree_insert(vol->file_tree, root_node, (fat_file)l->data);
+    fat_error("FS EXISTS %d", fs_exists);
+
+    if (!strcmp(iterate->name, "fs.log")) {
+      fs_exists = true;
+      fat_error("FS EXISTS %d", fs_exists);
+
+      fat_error("HOLA %s", (char *)iterate->name);
+      fat_error(" pos in parent %d", iterate->pos_in_parent);
+    }
+  }
+
+  fat_error("FS EXISTS piola %d", fs_exists);
+
+  if (!fs_exists) {
+    fat_error("HOLAAAAAAAAAAAAa");
+
+    fs_file = fat_file_init(vol->table, false, strdup(fs_path));
+
+    // insert to directory tree representation
+    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
+    // Write dentry in parent cluster
+    fat_file_dentry_add_child(root_file, fs_file);
+  }
+}
 int main(int argc, char **argv) {
   char *volume;
   char *mountpoint;
@@ -125,21 +168,7 @@ int main(int argc, char **argv) {
     fat_error("Failed to mount FAT volume \"%s\": %m", volume);
     return 1;
   }
-  errno = 0;
-  fat_file new_file;
-  fat_tree_node root_node, fs_node;
-  // Create file
-  fs_node = fat_tree_node_search(vol->file_tree, "/fs.log");
-  if (fs_node != NULL) {
-    new_file = fat_file_init(vol->table, false, strdup("/fs.log"));
-    if (errno < 0) {
-      return -errno;
-    }
-    // get root node
-    root_node = fat_tree_node_search(vol->file_tree, "/");
-    // add the new fat tree to the vol.
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, new_file);
-  }
+  create_fs_file(vol);
   // Call fuse_main() to pass control to FUSE.  This will daemonize the
   // process, causing it to detach from the terminal.  fat_volume_unmount()
   // will not be called until the filesystem is unmounted and fuse_main()
