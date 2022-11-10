@@ -55,43 +55,29 @@ struct fuse_operations fat_fuse_operations = {
 
 void create_fs_file(fat_volume vol) {
   char *fs_path = "/fs.log";
-  fat_file root_file, fs_file;
+  fat_file root_file, fs_file, child_file;
   fat_tree_node root_node;
   bool fs_exists = false;
+
   root_node = fat_tree_node_search(vol->file_tree, dirname(strdup(fs_path)));
-
   root_file = fat_tree_get_file(root_node);
-  fat_error("root_file->children_read %d", root_file->children_read);
-
-  fat_file iterate;
   GList *children_list = fat_file_read_children(root_file);
+
   for (GList *l = children_list; l != NULL; l = l->next) {
-    fat_error("root_file->children_read %d", root_file->children_read);
-    iterate = (fat_file)l->data;
-    vol->file_tree =
-        fat_tree_insert(vol->file_tree, root_node, (fat_file)l->data);
-    fat_error("FS EXISTS %d", fs_exists);
+    child_file = (fat_file)l->data;
+    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, child_file);
 
-    if (!strcmp(iterate->name, "fs.log")) {
+    if (fs_exists == false && !strcmp(child_file->name, "fs.log")) {
       fs_exists = true;
-      fat_error("FS EXISTS %d", fs_exists);
-
-      fat_error("HOLA %s", (char *)iterate->name);
-      fat_error(" pos in parent %d", iterate->pos_in_parent);
     }
-  }
-
-  fat_error("FS EXISTS piola %d", fs_exists);
-
-  if (!fs_exists) {
-    fat_error("HOLAAAAAAAAAAAAa");
-
-    fs_file = fat_file_init(vol->table, false, strdup(fs_path));
-
-    // insert to directory tree representation
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
-    // Write dentry in parent cluster
-    fat_file_dentry_add_child(root_file, fs_file);
+    if (!fs_exists && l->next == NULL) {
+      fs_file = fat_file_init(vol->table, false, strdup(fs_path));
+      // insert to directory tree representation
+      vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
+      // Write dentry in parent cluster
+      fat_file_dentry_add_child(root_file, fs_file);
+      fs_exists = true;
+    }
   }
 }
 int main(int argc, char **argv) {
