@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "big_brother.h"
 #include "fat_fuse_ops.h"
 #include "fat_volume.h"
 
@@ -154,6 +155,8 @@ int main(int argc, char **argv) {
     fat_error("Failed to mount FAT volume \"%s\": %m", volume);
     return 1;
   }
+  // We pass the value 2 bcs first and second cluster are reserved
+  fat_error("%d", search_bb_orphan_dir_cluster(vol, 2));
   create_fs_file(vol);
   // Call fuse_main() to pass control to FUSE.  This will daemonize the
   // process, causing it to detach from the terminal.  fat_volume_unmount()
