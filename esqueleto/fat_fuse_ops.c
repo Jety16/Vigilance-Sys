@@ -6,6 +6,12 @@
 
 #include "fat_fuse_ops.h"
 
+#include "big_brother.h"
+#include "fat_file.h"
+#include "fat_filename_util.h"
+#include "fat_fs_tree.h"
+#include "fat_util.h"
+#include "fat_volume.h"
 #include <alloca.h>
 #include <errno.h>
 #include <gmodule.h>
@@ -16,12 +22,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "big_brother.h"
-#include "fat_file.h"
-#include "fat_filename_util.h"
-#include "fat_fs_tree.h"
-#include "fat_util.h"
-#include "fat_volume.h"
 
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
@@ -133,9 +133,9 @@ int fat_fuse_opendir(const char *path, struct fuse_file_info *fi) {
 
 /* Read directory children. Calls function fat_file_read_children which returns
  * a list of files inside a GList. The children were read from the directory
- * entries in the cluster of the directory.
- * This function iterates over the list of children and adds them to the
- * file tree.
+ * entries in the cluster of the directory. 
+ * This function iterates over the list of children and adds them to the 
+ * file tree. 
  * This operation should be performed only once per directory, the first time
  * readdir is called.
  */
@@ -344,3 +344,66 @@ int fat_fuse_truncate(const char *path, off_t offset) {
     fat_file_truncate(file, offset, parent);
     return -errno;
 }
+
+
+int fat_fuse_unlink(const char *path){
+    errno = 0;
+    fat_volume vol = get_fat_volume();
+    fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
+
+    if (file_node == NULL || errno != 0) {
+        errno = ENOENT;
+        return -errno;
+    }
+    
+    fat_file file = fat_tree_get_file(file_node);
+    if (fat_file_is_directory(file)) {
+        errno = ENOENT;
+        return -errno;
+    }
+
+    //mark all clusters as free
+    fat_fuse_truncate(path,0);
+ 
+    fat_file parent = fat_tree_get_parent(file_node);
+    parent->dir.nentries--;
+
+    // Update parent�s directory and save changes on disk
+    file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
+    write_dir_entry(parent, file);
+
+    // Update directory tree
+    vol->file_tree = fat_tree_delete(vol->file_tree, path);
+
+    return -errno;
+}
+
+int fat_fuse_rmdir(const char *path) {
+    errno = 0;
+
+    fat_volume vol = get_fat_volume();
+    fat_tree_node dir_node = fat_tree_node_search(vol->file_tree, path);
+    fat_file dir = fat_tree_get_file(dir_node);
+
+    if (dir->dir.nentries > 0)
+    {
+        errno = ENOTEMPTY;
+        return -errno;
+    }
+    
+    //mark all clusters as free
+    fat_fuse_truncate(path,0);
+
+    fat_file parent = fat_tree_get_parent(dir_node);
+
+    // Update parent´s directory and save changes on disk
+
+    dir->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
+    write_dir_entry(parent, dir);
+    
+    // Update directory tree
+    vol->file_tree = fat_tree_delete(vol->file_tree, path);
+
+    return -errno; 
+}
+

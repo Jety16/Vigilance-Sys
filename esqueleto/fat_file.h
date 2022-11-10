@@ -142,7 +142,7 @@ void fat_file_dec_num_times_opened(fat_file file);
 /* Transfer the attributes of a FAT file into standard UNIX format struct stat.
  */
 void fat_file_to_stbuf(fat_file file, struct stat *stbuf);
-
+void write_dir_entry(fat_file parent, fat_file file);
 /* Fills @buf with the time information in @file. */
 void fat_utime(fat_file file, fat_file parent, const struct utimbuf *buf);
 
