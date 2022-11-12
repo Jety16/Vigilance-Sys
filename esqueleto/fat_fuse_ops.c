@@ -364,9 +364,10 @@ int fat_fuse_unlink(const char *path){
 
     //mark all clusters as free
     fat_fuse_truncate(path,0);
- 
+    fat_table_set_next_cluster(file->table,file->start_cluster, FAT_CLUSTER_FREE);
+
     fat_file parent = fat_tree_get_parent(file_node);
-    parent->dir.nentries--;
+    //parent->dir.nentries--;
 
     // Update parent�s directory and save changes on disk
     file->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
@@ -384,8 +385,9 @@ int fat_fuse_rmdir(const char *path) {
     fat_volume vol = get_fat_volume();
     fat_tree_node dir_node = fat_tree_node_search(vol->file_tree, path);
     fat_file dir = fat_tree_get_file(dir_node);
-
-    if (dir->dir.nentries > 0)
+    GList *children_list = fat_file_read_children(dir);
+    
+    if (g_list_length(children_list) > 0)
     {
         errno = ENOTEMPTY;
         return -errno;
@@ -397,13 +399,13 @@ int fat_fuse_rmdir(const char *path) {
     fat_file parent = fat_tree_get_parent(dir_node);
 
     // Update parent´s directory and save changes on disk
-
+    fat_table_set_next_cluster(dir->table,dir->start_cluster, FAT_CLUSTER_FREE);
     dir->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
     write_dir_entry(parent, dir);
-    
+    g_list_free(children_list);
+
     // Update directory tree
     vol->file_tree = fat_tree_delete(vol->file_tree, path);
 
     return -errno; 
 }
-
