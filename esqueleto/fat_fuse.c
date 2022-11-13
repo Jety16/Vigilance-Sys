@@ -52,6 +52,8 @@ struct fuse_operations fat_fuse_operations = {
     .utime = fat_fuse_utime,
     .truncate = fat_fuse_truncate,
     .write = fat_fuse_write,
+    .unlink = fat_fuse_unlink,
+    .rmdir = fat_fuse_rmdir,
 };
 
 void create_fs_file(fat_volume vol) {

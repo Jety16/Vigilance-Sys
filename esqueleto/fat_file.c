@@ -29,7 +29,7 @@
 //     printf("\t Attributes: %x\n", dentry->attribs);
 // }
 
-// static void write_dir_entry(fat_file parent, fat_file file);
+//static void write_dir_entry(fat_file parent, fat_file file);
 
 /* Fills fields last_modified_time, last_modified_date, last_access_date,
  * create_date and create_time of a *in disk* file directory entry @dir_entry,
