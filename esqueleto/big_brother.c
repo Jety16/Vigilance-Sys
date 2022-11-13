@@ -1,5 +1,6 @@
 #include "big_brother.h"
 
+#include <libgen.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,49 +43,61 @@ u32 search_bb_orphan_dir_cluster(fat_volume vol, int offset) {
 /* Creates the /bb directory as an orphan and adds it to the file tree as
  * child of root dir.
  */
-static int bb_create_new_orphan_dir(fat_volume vol) {
+int bb_create_new_orphan_dir(fat_volume vol) {
   errno = 0;
   // ****MOST IMPORTANT PART, DO NOT SAVE DIR ENTRY TO PARENT ****
 
-  char *fs_path = "/bb";
-  fat_file root_file, fs_file, child_file;
+  // char *bb_path = "/bb";
+  fat_file root_file, bb_file /* , child_file */;
   fat_tree_node root_node;
-  bool fs_exists = false;
+  bool bb_exists = false, find_cluster = false;
+  u32 bb_cluster = search_bb_orphan_dir_cluster(vol, 2);
+  off_t offset;
+  /*  Busco el archivo */
+  while (!fat_table_cluster_is_bad_sector(bb_cluster) && !find_cluster) {
+    offset = fat_table_cluster_offset(vol->table, bb_cluster);
+    if (/* condition */) {
+      /* code */
+    }
 
-  root_node = fat_tree_node_search(vol->file_tree, dirname(strdup(fs_path)));
+    // if (bb_is_log_file_dentry(0) == 0) {
+    //  find_cluster = true;
+    //} else
+    bb_cluster = search_bb_orphan_dir_cluster(vol, bb_cluster);
+  }
+
+  root_node = fat_tree_node_search(vol->file_tree, dirname(strdup("/")));
   root_file = fat_tree_get_file(root_node);
   GList *children_list = fat_file_read_children(root_file);
 
   for (GList *l = children_list; l != NULL; l = l->next) {
-    child_file = (fat_file)l->data;
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, child_file);
-
-    if (fs_exists == false && !strcmp(child_file->name, "fs.log")) {
-      fs_exists = true;
-    }
-    if (!fs_exists && l->next == NULL) {
-      fs_file = fat_file_init(vol->table, false, strdup(fs_path));
-      // insert to directory tree representation
-      vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
-      // Write dentry in parent cluster
-      fat_file_dentry_add_child(root_file, fs_file);
-      fs_exists = true;
-    }
+    bb_file = (fat_file)l->data;
+    fat_error("bb_file = %s \n", (char *)bb_file->name);
+    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, bb_file);
   }
-
-  root_file->start_cluster = FAT_CLUSTER_BAD_SECTOR;
+  if (!bb_exists) {
+    int algo = bb_init_log_dir(bb_cluster, vol);
+    if (algo < -1000) {  // ver esta guarda
+      return 1;
+    }
+    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, bb_file);
+    bb_exists = true;
+  }
+  return 0;
 }
 
-int bb_init_log_dir(u32 start_cluster) {
+int bb_init_log_dir(u32 start_cluster, fat_volume vol) {
   errno = 0;
-  fat_volume vol = NULL;
+
   fat_tree_node root_node = NULL;
-  vol = get_fat_volume();
 
   // Create a new file from scratch, instead of using a direntry like normally
   // done.
+
   fat_file loaded_bb_dir =
       fat_file_init_orphan_dir(BB_DIRNAME, vol->table, start_cluster);
+  fat_error("AFTER FILE INIT ORPHAN DIR\n\n");
+
   // Add directory to file tree. It's entries will be like any other dir.
   root_node = fat_tree_node_search(vol->file_tree, "/");
   vol->file_tree = fat_tree_insert(vol->file_tree, root_node, loaded_bb_dir);

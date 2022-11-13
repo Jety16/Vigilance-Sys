@@ -77,7 +77,6 @@ void create_fs_file(fat_volume vol) {
       vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
       // Write dentry in parent cluster
       fat_file_dentry_add_child(root_file, fs_file);
-      fs_exists = true;
     }
   }
 }
@@ -155,9 +154,19 @@ int main(int argc, char **argv) {
     fat_error("Failed to mount FAT volume \"%s\": %m", volume);
     return 1;
   }
+  // create_fs_file(vol);
   // We pass the value 2 bcs first and second cluster are reserved
-  fat_error("%d", search_bb_orphan_dir_cluster(vol, 2));
-  create_fs_file(vol);
+
+  // fat_error("%d", search_bb_orphan_dir_cluster(vol, 2));
+  bb_create_new_orphan_dir(vol);
+  fat_tree_node bb_node = fat_tree_node_search(vol->file_tree, "/bb");
+  fat_file bb_file = fat_tree_get_file(bb_node);
+  fat_file fs_file = fat_file_init(vol->table, false, strdup("/bb/fs.log"));
+  // insert to directory tree representation
+  vol->file_tree = fat_tree_insert(vol->file_tree, bb_node, fs_file);
+  // Write dentry in parent cluster
+  fat_file_dentry_add_child(bb_file, fs_file);
+
   // Call fuse_main() to pass control to FUSE.  This will daemonize the
   // process, causing it to detach from the terminal.  fat_volume_unmount()
   // will not be called until the filesystem is unmounted and fuse_main()

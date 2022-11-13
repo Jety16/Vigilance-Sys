@@ -13,10 +13,11 @@
 #ifndef _FAT_FILE_H
 #define _FAT_FILE_H
 
-#include "fat_types.h"
 #include <gmodule.h>
 #include <sys/types.h>
 #include <utime.h>
+
+#include "fat_types.h"
 
 struct stat;
 
@@ -38,72 +39,71 @@ struct stat;
 #define MAX_FILENAME (8 + 1 + 3 + 1)
 #define MAX_PATH_LEN 4096 /* Copied from libfat */
 
-
 /********************* DATA STRUCTURES *********************/
 
 /* Format of a FAT directory entry on disk (32 bytes) */
 struct fat_dir_entry_s {
-    u8 base_name[8];
-    u8 extension[3];
-    u8 attribs;
-    u8 reserved;
-    u8 create_time_fine_res;
-    le16 create_time;      // BEWARE: little endian number
-    le16 create_date;      // BEWARE: little endian number
-    le16 last_access_date; // BEWARE: little endian number
-    union {
-        le16 file_access_bitmap; // Old formats
-        le16 fat32_start_cluster_high;
-    };
-    le16 last_modified_time; // BEWARE: little endian number
-    le16 last_modified_date; // BEWARE: little endian number
-    le16 start_cluster_low;  // only last two bytes
-    le32 file_size;
+  u8 base_name[8];
+  u8 extension[3];
+  u8 attribs;
+  u8 reserved;
+  u8 create_time_fine_res;
+  le16 create_time;       // BEWARE: little endian number
+  le16 create_date;       // BEWARE: little endian number
+  le16 last_access_date;  // BEWARE: little endian number
+  union {
+    le16 file_access_bitmap;  // Old formats
+    le16 fat32_start_cluster_high;
+  };
+  le16 last_modified_time;  // BEWARE: little endian number
+  le16 last_modified_date;  // BEWARE: little endian number
+  le16 start_cluster_low;   // only last two bytes
+  le32 file_size;
 } __attribute__((packed));
-
 
 /* Wrapper around a FAT directory entry that contains members used to put it in
  * data structures, and to use it as a file handle */
 struct fat_file_s {
-    // The data from the actual FAT directory entry
-    fat_dir_entry dentry;
-    // Full name of the file (with extension)
-    char name[MAX_FILENAME];
-    // Full path to file.
-    char *filepath;
-    // Full start cluster
-    u32 start_cluster;
+  // The data from the actual FAT directory entry
+  fat_dir_entry dentry;
+  // Full name of the file (with extension)
+  char name[MAX_FILENAME];
+  // Full path to file.
+  char *filepath;
+  // Full start cluster
+  u32 start_cluster;
 
-    union {
-        // Valid only for directories
-        struct {
-            // Number of consecutive dir entries in disk (including ignored
-            // ones). It also marks the position of the first free space for a
-            // dir_entry.
-            u32 nentries;
-        } dir;
-        // Valid only for non-directory files
-        struct {
-            // Number of clusters that this file is supposed to be,
-            // based on the file_size given in the directory entry.
-            u32 num_clusters;
-        } file;
-    };
-    // Position in the parent directory entry table
-    u32 pos_in_parent;
-    // Pointer to the FAT table containing this file
-    fat_table table;
-    // Current number of open file descriptors to this file
-    u32 num_times_opened : 31;
-    // True iff the subdirectories of this file have been read into memory.
-    // Always 0 for non-directories.
-    u32 children_read : 1;
+  union {
+    // Valid only for directories
+    struct {
+      // Number of consecutive dir entries in disk (including ignored
+      // ones). It also marks the position of the first free space for a
+      // dir_entry.
+      u32 nentries;
+    } dir;
+    // Valid only for non-directory files
+    struct {
+      // Number of clusters that this file is supposed to be,
+      // based on the file_size given in the directory entry.
+      u32 num_clusters;
+    } file;
+  };
+  // Position in the parent directory entry table
+  u32 pos_in_parent;
+  // Pointer to the FAT table containing this file
+  fat_table table;
+  // Current number of open file descriptors to this file
+  u32 num_times_opened : 31;
+  // True iff the subdirectories of this file have been read into memory.
+  // Always 0 for non-directories.
+  u32 children_read : 1;
 };
 
-/* Inits a file without using a parent's direntry. Can be used to create root file.
- * TAD is owner of @filepath and will apply free at destroy.
+/* Inits a file without using a parent's direntry. Can be used to create root
+ * file. TAD is owner of @filepath and will apply free at destroy.
  */
-fat_file fat_file_init_orphan_dir(char *name, fat_table table, u32 start_cluster);
+fat_file fat_file_init_orphan_dir(char *name, fat_table table,
+                                  u32 start_cluster);
 
 /* Returns an new directory entry with default values.
  * Caller is still owner of @filepath reference.
@@ -192,4 +192,5 @@ void fat_file_truncate(fat_file file, off_t offset, fat_file parent);
 ssize_t fat_file_pwrite(fat_file file, const void *buf, size_t size,
                         off_t offset, fat_file parent);
 
+void write_dir_entry(fat_file parent, fat_file file);
 #endif /* _FAT_FILE_H */
