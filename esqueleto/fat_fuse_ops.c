@@ -175,11 +175,14 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   children = fat_tree_flatten_h_children(dir_node);
   child = children;
   while (*child != NULL) {
-    if (strcmp((*child)->name, "bb")) {
-      error = (*filler)(buf, (*child)->name, NULL, 0);
-      if (error != 0) {
-        return -errno;
-      }
+    if (strcmp((*child)->name, "fs.log") == 0 || strcmp((*child)->name, "bb") == 0 ) {
+      child++;
+      continue;
+    }
+
+    error = (*filler)(buf, (*child)->name, NULL, 0);
+    if (error != 0) {
+      return -errno;
     }
     child++;
   }
