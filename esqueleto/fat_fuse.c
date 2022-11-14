@@ -57,7 +57,7 @@ struct fuse_operations fat_fuse_operations = {
 };
 
 void create_fs_file(fat_volume vol) {
-  char *fs_path = "/fs.log";
+  char *fs_path = "bb/fs.log";
   fat_file root_file, fs_file, child_file;
   fat_tree_node root_node;
   bool fs_exists = false;
@@ -160,13 +160,13 @@ int main(int argc, char **argv) {
   // We pass the value 2 bcs first and second cluster are reserved
 
   bb_create_new_orphan_dir(vol);
-  fat_tree_node bb_node = fat_tree_node_search(vol->file_tree, "/bb");
-  fat_file bb_file = fat_tree_get_file(bb_node);
-  fat_file fs_file = fat_file_init(vol->table, false, strdup("/bb/fs.log"));
-  // insert to directory tree representation
-  vol->file_tree = fat_tree_insert(vol->file_tree, bb_node, fs_file);
-  // Write dentry in parent cluster
-  fat_file_dentry_add_child(bb_file, fs_file);
+  // fat_tree_node bb_node = fat_tree_node_search(vol->file_tree, "/bb");
+  // fat_file bb_file = fat_tree_get_file(bb_node);
+  // fat_file fs_file = fat_file_init(vol->table, false, strdup("/bb/fs.log"));
+  //// insert to directory tree representation
+  // vol->file_tree = fat_tree_insert(vol->file_tree, bb_node, fs_file);
+  //// Write dentry in parent cluster
+  // fat_file_dentry_add_child(bb_file, fs_file);
 
   // Call fuse_main() to pass control to FUSE.  This will daemonize the
   // process, causing it to detach from the terminal.  fat_volume_unmount()
