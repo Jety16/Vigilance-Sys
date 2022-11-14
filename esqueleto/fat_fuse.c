@@ -159,7 +159,6 @@ int main(int argc, char **argv) {
   // create_fs_file(vol);
   // We pass the value 2 bcs first and second cluster are reserved
 
-  // fat_error("%d", search_bb_orphan_dir_cluster(vol, 2));
   bb_create_new_orphan_dir(vol);
   fat_tree_node bb_node = fat_tree_node_search(vol->file_tree, "/bb");
   fat_file bb_file = fat_tree_get_file(bb_node);

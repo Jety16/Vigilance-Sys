@@ -6,12 +6,6 @@
 
 #include "fat_fuse_ops.h"
 
-#include "big_brother.h"
-#include "fat_file.h"
-#include "fat_filename_util.h"
-#include "fat_fs_tree.h"
-#include "fat_util.h"
-#include "fat_volume.h"
 #include <alloca.h>
 #include <errno.h>
 #include <gmodule.h>
@@ -22,6 +16,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "big_brother.h"
+#include "fat_file.h"
+#include "fat_filename_util.h"
+#include "fat_fs_tree.h"
+#include "fat_util.h"
+#include "fat_volume.h"
 
 #define LOG_MESSAGE_SIZE 100
 #define DATE_MESSAGE_SIZE 30
@@ -131,9 +131,9 @@ int fat_fuse_opendir(const char *path, struct fuse_file_info *fi) {
 
 /* Read directory children. Calls function fat_file_read_children which returns
  * a list of files inside a GList. The children were read from the directory
- * entries in the cluster of the directory. 
- * This function iterates over the list of children and adds them to the 
- * file tree. 
+ * entries in the cluster of the directory.
+ * This function iterates over the list of children and adds them to the
+ * file tree.
  * This operation should be performed only once per directory, the first time
  * readdir is called.
  */
@@ -175,7 +175,8 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   children = fat_tree_flatten_h_children(dir_node);
   child = children;
   while (*child != NULL) {
-    if (strcmp((*child)->name, "fs.log") == 0 || strcmp((*child)->name, "bb") == 0 ) {
+    if (strcmp((*child)->name, "fs.log") == 0 ||
+        strcmp((*child)->name, "bb") == 0) {
       child++;
       continue;
     }
@@ -404,8 +405,7 @@ int fat_fuse_rmdir(const char *path) {
   return -errno;
 }
 
-
-int fat_fuse_unlink(const char *path){
+/* int fat_fuse_unlink(const char *path){
     errno = 0;
     fat_volume vol = get_fat_volume();
     fat_tree_node file_node = fat_tree_node_search(vol->file_tree, path);
@@ -414,7 +414,7 @@ int fat_fuse_unlink(const char *path){
         errno = ENOENT;
         return -errno;
     }
-    
+
     fat_file file = fat_tree_get_file(file_node);
     if (fat_file_is_directory(file)) {
         errno = ENOENT;
@@ -423,7 +423,8 @@ int fat_fuse_unlink(const char *path){
 
     //mark all clusters as free
     fat_fuse_truncate(path,0);
-    fat_table_set_next_cluster(file->table,file->start_cluster, FAT_CLUSTER_FREE);
+    fat_table_set_next_cluster(file->table,file->start_cluster,
+FAT_CLUSTER_FREE);
 
     fat_file parent = fat_tree_get_parent(file_node);
     //parent->dir.nentries--;
@@ -445,13 +446,13 @@ int fat_fuse_rmdir(const char *path) {
     fat_tree_node dir_node = fat_tree_node_search(vol->file_tree, path);
     fat_file dir = fat_tree_get_file(dir_node);
     GList *children_list = fat_file_read_children(dir);
-    
+
     if (g_list_length(children_list) > 0)
     {
         errno = ENOTEMPTY;
         return -errno;
     }
-    
+
     //mark all clusters as free
     fat_fuse_truncate(path,0);
 
@@ -466,5 +467,6 @@ int fat_fuse_rmdir(const char *path) {
     // Update directory tree
     vol->file_tree = fat_tree_delete(vol->file_tree, path);
 
-    return -errno; 
+    return -errno;
 }
+ */

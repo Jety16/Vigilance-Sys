@@ -7,45 +7,39 @@
 #include "fat_table.h"
 #include "fat_util.h"
 #include "fat_volume.h"
-
-
-
-GList *fat_file_read_children(fat_file dir) {
-  u32 bytes_per_cluster = 0, cur_cluster = 0;
-  off_t cur_offset = 0;
-  u8 *buf = NULL;
-  GList *entry_list = NULL;
-
-  DEBUG("Reading children of \"%s\"", dir->filepath);
-  bytes_per_cluster = fat_table_bytes_per_cluster(dir->table);
-  cur_cluster = dir->start_cluster;
-  if (!fat_table_is_valid_cluster_number(dir->table, cur_cluster)) {
-    fat_error("Cluster number %u is invalid", cur_cluster);
-    errno = EIO;
-    return NULL;
-  }
-  cur_offset = fat_table_cluster_offset(dir->table, cur_cluster);
-
-  buf = alloca(bytes_per_cluster);
-  while (fat_table_cluster_is_bad_sector(cluster)) {
-    fat_dir_entry end_ptr;
-    end_ptr = (fat_dir_entry)(buf + bytes_per_cluster) - 1;
-    if (full_pread(dir->table->fd, buf, bytes_per_cluster, cur_offset) !=
-        bytes_per_cluster) {
-      errno = EIO;
-      return NULL;
-    }
-    read_cluster_dir_entries(buf, end_ptr, dir, &entry_list);
-    cur_cluster = fat_table_get_next_cluster(dir->table, cur_cluster);
-    cur_offset = fat_table_cluster_offset(dir->table, cur_cluster);
-  }
-  dir->children_read = 1;
-  return entry_list;
-}
-
-
-
-
+#include "unistd.h"
+// GList *fat_file_read_children(fat_file dir) {
+//  u32 bytes_per_cluster = 0, cur_cluster = 0;
+//  off_t cur_offset = 0;
+//  u8 *buf = NULL;
+//  GList *entry_list = NULL;
+//
+//  DEBUG("Reading children of \"%s\"", dir->filepath);
+//  bytes_per_cluster = fat_table_bytes_per_cluster(dir->table);
+//  cur_cluster = dir->start_cluster;
+//  if (!fat_table_is_valid_cluster_number(dir->table, cur_cluster)) {
+//    fat_error("Cluster number %u is invalid", cur_cluster);
+//    errno = EIO;
+//    return NULL;
+//  }
+//  cur_offset = fat_table_cluster_offset(dir->table, cur_cluster);
+//
+//  buf = alloca(bytes_per_cluster);
+//  while (fat_table_cluster_is_bad_sector(cluster)) {
+//    fat_dir_entry end_ptr;
+//    end_ptr = (fat_dir_entry)(buf + bytes_per_cluster) - 1;
+//    if (full_pread(dir->table->fd, buf, bytes_per_cluster, cur_offset) !=
+//        bytes_per_cluster) {
+//      errno = EIO;
+//      return NULL;
+//    }
+//    read_cluster_dir_entries(buf, end_ptr, dir, &entry_list);
+//    cur_cluster = fat_table_get_next_cluster(dir->table, cur_cluster);
+//    cur_offset = fat_table_cluster_offset(dir->table, cur_cluster);
+//  }
+//  dir->children_read = 1;
+//  return entry_list;
+//}
 
 int bb_is_log_file_dentry(fat_dir_entry dir_entry) {
   return strncmp(LOG_FILE_BASENAME, (char *)(dir_entry->base_name), 3) == 0 &&
@@ -73,7 +67,7 @@ u32 search_bb_orphan_dir_cluster(fat_volume vol, int offset) {
   if (!fat_table_is_valid_cluster_number(vol->table, bb_dir_start_cluster)) {
     fat_error("There was a problem fetching for a free cluster");
     // Forzamos un EOC para catchearlo en la otra func
-    bb_dir_start_cluster = FAT_CLUSTER_END_OF_CHAIN_MAX + 1;
+    bb_dir_start_cluster = FAT_CLUSTER_END_OF_CHAIN_MAX;
   }
   DEBUG("next bad cluster = %u", bb_dir_start_cluster);
   return bb_dir_start_cluster;
@@ -84,43 +78,28 @@ u32 search_bb_orphan_dir_cluster(fat_volume vol, int offset) {
  */
 int bb_create_new_orphan_dir(fat_volume vol) {
   errno = 0;
-  // ****MOST IMPORTANT PART, DO NOT SAVE DIR ENTRY TO PARENT ****
 
   // char *bb_path = "/bb";
   fat_file root_file, bb_file /* , child_file */;
   fat_tree_node root_node;
   bool bb_exists = false, find_cluster = false;
   u32 bb_cluster = search_bb_orphan_dir_cluster(vol, 2);
-  //off_t offset;
+  off_t offset;
+  u8 *buf = NULL;
+  fat_dir_entry bb_dentry;
   /*  Busco el archivo */
   while (!find_cluster && fat_table_cluster_is_EOC(bb_cluster)) {
-    //offset = fat_table_cluster_offset(vol->table, bb_cluster);
-    //full_pread(vol->table->fd,)
-    if (fat_table_cluster_is_bad_sector(bb_cluster)) {
-      fat_dir_entry end_ptr;
-      end_ptr = (fat_dir_entry)(buf + bytes_per_cluster) - 1;
-      if (full_pread(dir->table->fd, buf, bytes_per_cluster, cur_offset) !=
-          bytes_per_cluster) {
-        errno = EIO;
-        return NULL;
-      }
-      read_cluster_dir_entries(buf, end_ptr, dir, &entry_list);
-      // if(bb_is_log_dirpath(filepath)){
-          // find_cluster = true;
-          // chekear que el primero sea fs.log
-      // }
-          // else {
-      //      bb_cluster = search_bb_orphan_dir_cluster(vol,bb_cluster);
-      //  }
-    }
-//
-    //// if (bb_is_log_file_dentry(0) == 0) {
-    ////  find_cluster = true;
-    ////} else
-    //bb_cluster = search_bb_orphan_dir_cluster(vol, bb_cluster);
-    find_cluster = true;
+    DEBUG("next bad cluster = %u", bb_cluster);
+    offset = fat_table_cluster_offset(vol->table, bb_cluster);
+    // bb_dentry =
+    //    (fat_dir_entry)fat_table_seek_cluster(vol->table, bb_cluster, offset);
+    fat_error("HOLAAAAA");
+    bb_dentry = (fat_dir_entry)pread(vol->table->fd, buf, 32, offset);
+    find_cluster = bb_is_log_file_dentry(bb_dentry);
+    bb_exists = true;
   }
 
+  /* Inserto al arbol */
   root_node = fat_tree_node_search(vol->file_tree, dirname(strdup("/")));
   root_file = fat_tree_get_file(root_node);
   GList *children_list = fat_file_read_children(root_file);
@@ -130,12 +109,15 @@ int bb_create_new_orphan_dir(fat_volume vol) {
     fat_error("bb_file = %s \n", (char *)bb_file->name);
     vol->file_tree = fat_tree_insert(vol->file_tree, root_node, bb_file);
   }
-
+  /* Creo el bb */
   if (!bb_exists) {
     int algo = bb_init_log_dir(bb_cluster, vol);
     if (algo < -1000) {  // ver esta guarda
       return 1;
     }
+    // fat_error("HOLAAAA");
+    // fat_table_set_next_cluster(vol->table, bb_cluster,
+    // FAT_CLUSTER_BAD_SECTOR); fat_error("HOLAAAA");
     vol->file_tree = fat_tree_insert(vol->file_tree, root_node, bb_file);
     bb_exists = true;
   }
