@@ -56,32 +56,6 @@ struct fuse_operations fat_fuse_operations = {
     .rmdir = fat_fuse_rmdir,
 };
 
-void create_fs_file(fat_volume vol) {
-  char *fs_path = "/fs.log";
-  fat_file root_file, fs_file, child_file;
-  fat_tree_node root_node;
-  bool fs_exists = false;
-
-  root_node = fat_tree_node_search(vol->file_tree, dirname(strdup(fs_path)));
-  root_file = fat_tree_get_file(root_node);
-  GList *children_list = fat_file_read_children(root_file);
-
-  for (GList *l = children_list; l != NULL; l = l->next) {
-    child_file = (fat_file)l->data;
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, child_file);
-
-    if (fs_exists == false && !strcmp(child_file->name, "fs.log")) {
-      fs_exists = true;
-    }
-    if (!fs_exists && l->next == NULL) {
-      fs_file = fat_file_init(vol->table, false, strdup(fs_path));
-      // insert to directory tree representation
-      vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
-      // Write dentry in parent cluster
-      fat_file_dentry_add_child(root_file, fs_file);
-    }
-  }
-}
 int main(int argc, char **argv) {
   char *volume;
   char *mountpoint;
@@ -160,13 +134,13 @@ int main(int argc, char **argv) {
   // We pass the value 2 bcs first and second cluster are reserved
 
   bb_create_new_orphan_dir(vol);
-  fat_tree_node bb_node = fat_tree_node_search(vol->file_tree, "/bb");
-  fat_file bb_file = fat_tree_get_file(bb_node);
-  fat_file fs_file = fat_file_init(vol->table, false, strdup("/bb/fs.log"));
-  // insert to directory tree representation
-  vol->file_tree = fat_tree_insert(vol->file_tree, bb_node, fs_file);
-  // Write dentry in parent cluster
-  fat_file_dentry_add_child(bb_file, fs_file);
+  // fat_tree_node bb_node = fat_tree_node_search(vol->file_tree, "/bb");
+  // fat_file bb_file = fat_tree_get_file(bb_node);
+  // fat_file fs_file = fat_file_init(vol->table, false, strdup("/bb/fs.log"));
+  //// insert to directory tree representation
+  // vol->file_tree = fat_tree_insert(vol->file_tree, bb_node, fs_file);
+  //// Write dentry in parent cluster
+  // fat_file_dentry_add_child(bb_file, fs_file);
 
   // Call fuse_main() to pass control to FUSE.  This will daemonize the
   // process, causing it to detach from the terminal.  fat_volume_unmount()
