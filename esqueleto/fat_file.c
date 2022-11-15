@@ -29,7 +29,7 @@
 //     printf("\t Attributes: %x\n", dentry->attribs);
 // }
 
-//static void write_dir_entry(fat_file parent, fat_file file);
+// static void write_dir_entry(fat_file parent, fat_file file);
 
 /* Fills fields last_modified_time, last_modified_date, last_access_date,
  * create_date and create_time of a *in disk* file directory entry @dir_entry,
@@ -85,7 +85,6 @@ static int set_first_cluster(fat_dir_entry dir_entry, u32 cluster) {
 static u32 file_start_cluster(fat_dir_entry disk_dentry) {
   u32 start_cluster;
   start_cluster = le16_to_cpu(disk_dentry->start_cluster_low);
-
   // FAT32 uses a 32-bit start cluster field, but it's split into
   // two different 16-bit locations on disk.
   start_cluster |= (u32)le16_to_cpu(disk_dentry->fat32_start_cluster_high)
@@ -120,6 +119,7 @@ fat_file fat_file_init_orphan_dir(char *name, fat_table table,
   fat_dir_entry orphan_entry =
       fat_file_init_direntry(true, strdup(name), start_cluster);
   fat_file orphan_dir = fat_file_init_empty(true, strdup(name));
+
   if (errno != 0) {
     free(orphan_entry);
     free(orphan_dir);
@@ -210,7 +210,6 @@ fat_file fat_file_init(fat_table table, bool is_dir, char *filepath) {
     return NULL;
   }
   new_file->table = table;
-
   u32 start_cluster = fat_table_get_next_free_cluster(table);
   if (fat_table_is_cluster_used(table, start_cluster)) {
     DEBUG("Assigned cluster in use!");
@@ -393,8 +392,6 @@ GList *fat_file_read_children(fat_file dir) {
   off_t cur_offset = 0;
   u8 *buf = NULL;
   GList *entry_list = NULL;
-
-  DEBUG("Reading children of \"%s\"", dir->filepath);
   bytes_per_cluster = fat_table_bytes_per_cluster(dir->table);
   cur_cluster = dir->start_cluster;
   if (!fat_table_is_valid_cluster_number(dir->table, cur_cluster)) {

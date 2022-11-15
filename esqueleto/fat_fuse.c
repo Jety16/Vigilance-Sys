@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "big_brother.h"
 #include "fat_fuse_ops.h"
 #include "fat_volume.h"
 
@@ -55,33 +56,6 @@ struct fuse_operations fat_fuse_operations = {
     .rmdir = fat_fuse_rmdir,
 };
 
-void create_fs_file(fat_volume vol) {
-  char *fs_path = "/fs.log";
-  fat_file root_file, fs_file, child_file;
-  fat_tree_node root_node;
-  bool fs_exists = false;
-
-  root_node = fat_tree_node_search(vol->file_tree, dirname(strdup(fs_path)));
-  root_file = fat_tree_get_file(root_node);
-  GList *children_list = fat_file_read_children(root_file);
-
-  for (GList *l = children_list; l != NULL; l = l->next) {
-    child_file = (fat_file)l->data;
-    vol->file_tree = fat_tree_insert(vol->file_tree, root_node, child_file);
-
-    if (fs_exists == false && !strcmp(child_file->name, "fs.log")) {
-      fs_exists = true;
-    }
-    if (!fs_exists && l->next == NULL) {
-      fs_file = fat_file_init(vol->table, false, strdup(fs_path));
-      // insert to directory tree representation
-      vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
-      // Write dentry in parent cluster
-      fat_file_dentry_add_child(root_file, fs_file);
-      fs_exists = true;
-    }
-  }
-}
 int main(int argc, char **argv) {
   char *volume;
   char *mountpoint;
@@ -130,6 +104,37 @@ int main(int argc, char **argv) {
   fuse_argv[fuse_argc] = "-s";  // Single-threaded
   fuse_argc++;
 
+// Parte 1
+/* 
+  void create_fs_file(fat_volume vol) {
+    char *fs_path = "/fs.log";
+    fat_file root_file, fs_file, child_file;
+    fat_tree_node root_node;
+    bool fs_exists = false;
+
+    root_node = fat_tree_node_search(vol->file_tree, dirname(strdup(fs_path)));
+    root_file = fat_tree_get_file(root_node);
+    GList *children_list = fat_file_read_children(root_file);
+
+    for (GList *l = children_list; l != NULL; l = l->next) {
+      child_file = (fat_file)l->data;
+      vol->file_tree = fat_tree_insert(vol->file_tree, root_node, child_file);
+
+      if (fs_exists == false && !strcmp(child_file->name, "fs.log")) {
+        fs_exists = true;
+      }
+      if (!fs_exists && l->next == NULL) {
+        fs_file = fat_file_init(vol->table, false, strdup(fs_path));
+        // insert to directory tree representation
+        vol->file_tree = fat_tree_insert(vol->file_tree, root_node, fs_file);
+        // Write dentry in parent cluster
+        fat_file_dentry_add_child(root_file, fs_file);
+        fs_exists = true;
+      }
+    }
+  }
+*/
+
   if (mount_flags & FAT_MOUNT_FLAG_READONLY) {
     DEBUG("Read only mode");
     fuse_argv[fuse_argc] = "-o";
@@ -156,7 +161,12 @@ int main(int argc, char **argv) {
     fat_error("Failed to mount FAT volume \"%s\": %m", volume);
     return 1;
   }
-  create_fs_file(vol);
+  // Parte 1:
+  // create_fs_file(vol);
+
+  // Parte 2:
+  bb_create_new_orphan_dir(vol);
+
   // Call fuse_main() to pass control to FUSE.  This will daemonize the
   // process, causing it to detach from the terminal.  fat_volume_unmount()
   // will not be called until the filesystem is unmounted and fuse_main()
