@@ -90,7 +90,7 @@ u32 search_bb_orphan_dir_cluster(fat_volume vol, int offset) {
   DEBUG("next bad cluster = %u", bb_dir_start_cluster);
   if (find_it) {
     fat_error("FIND IT\n");
-    return bb_dir_start_cluster;
+    return bb_dir_start_cluster-1;
   } else {
     fat_error("NOT FIND IT\n");
     return 0;
