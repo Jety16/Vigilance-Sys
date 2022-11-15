@@ -52,14 +52,14 @@ static void create_fs_file(fat_volume vol) {
   }
 }
 
-u32 search_bb_orphan_dir_cluster(fat_volume vol, int offset) {
+u32 search_bb_orphan_dir_cluster(fat_volume vol) {
   /* Searches for a cluster that could correspond to the bb directory and returns
    * its index. If the cluster is not found, returns 0.
    */
-  u32 bb_dir_start_cluster = offset;
+  u32 bb_dir_start_cluster = 2;
   bool find_it = false;
 
-  while (!find_it && bb_dir_start_cluster < 10000) {
+  while (!find_it && bb_dir_start_cluster < min(10000, vol->table->num_data_clusters)){
     if ((((const le32 *)vol->table->fat_map)[bb_dir_start_cluster]) ==
         FAT_CLUSTER_BAD_SECTOR) {
       u32 bytes_per_cluster = fat_table_bytes_per_cluster(vol->table);
@@ -110,7 +110,7 @@ int bb_init_log_dir(u32 start_cluster, fat_volume vol) {
  */
 int bb_create_new_orphan_dir(fat_volume vol) {
   errno = 0;
-  u32 bb_cluster = search_bb_orphan_dir_cluster(vol, 2);
+  u32 bb_cluster = search_bb_orphan_dir_cluster(vol);
 
   bb_init_log_dir(bb_cluster, vol);
 
