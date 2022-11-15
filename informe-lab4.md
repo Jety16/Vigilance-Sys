@@ -91,83 +91,25 @@ En la primera parte del proyecto decidimos implementar una función que funcione
 
 ### Segunda parte
 
-En la segunda parte del proyecto intentamos reutilizar lo hecho en la primera
-
-parte pero nos dimos cuenta de que necesitamos refaccionar el código.
+En la segunda parte del proyecto intentamos reutilizar lo hecho en la primera parte pero nos dimos cuenta de que necesitamos refaccionar el código.
 
 Decidimos dividir el código en distintas partes:  
 
-Búsqueda (search_bb_orphan_dir_cluster):  
-Nuestro algoritmo de búsqueda se encarga de ir iterando todos los
+Búsqueda (search_bb_orphan_dir_cluster): Nuestro algoritmo de búsqueda se encarga de ir iterando todos los clusters hasta encontrar algún cluster marcado como BAD. Una vez que encontramos un cluster “malo” necesitamos chequear que este cluster es el que aloja a nuestro directorio “bb”.
+  -Caso en el que lo encuentra: Devolvemos el número de cluster en el cual esté nuestro bb.
+  -Caso en el que no lo encuentra: Devolvemos el siguiente cluster vacío y lo marcamos como un cluster malo y creamos el directorio bb.
 
-clusters hasta encontrar algún cluster marcado como BAD.  
-Una vez que encontramos un cluster “malo” necesitamos chequear que
+Creación del directorio (bb_init_log_dir): Creamos un directorio desde 0, sin usar una direntry, para luego insertarlo en nuestro file_tree.
 
-este cluster es el que aloja a nuestro directorio “bb”.  
-Caso en el que lo encuentra:  
-Devolvemos el número de cluster en el cual esté nuestro bb.
-
-Caso en el que no lo encuentra:
-
-Devolvemos el siguiente cluster vacío y lo marcamos como un
-
-cluster malo y creamos el directorio bb.
+Creación del fs.log (create_fs_file): Esta es la función más importante. Lo que necesitamos hacer aquí es utilizar el fat_tree_get_file para obtener el directorio de bb. Luego leeremos todos los hijos de bb, buscando a ver si existe un fs.log
+  -Caso en el que exista: Lo insertamos a nuestro file_tree, no es necesario crearlo de vuelta, sino perdemos persistencia sobrescribiendo el archivo.
+  -Caso en el que no exista: Necesitamos crearlo, lo inicializamos con la función fat_file_init, luego, lo insertamos en nuestro file_tree y lo seteamos como hijo de bb_file.
 
   
-
-Creación del directorio (bb_init_log_dir):
-
-Creamos un directorio desde 0, sin usar una
-
-dientry, para luego insertarlo en nuestro file_tree
-
-  
-
-Creación del fs.log (create_fs_file):
-
-Esta es la función más importante. Lo que necesitamos hacer aquí es utilizar el fat_tree_get_file para obtener el directorio de bb.  
-luego leeremos todos los hijos de bb, buscando a ver si existe un fs.log
-
-  
-
-Caso en el que exista:
-
-Lo insertamos a nuestro file_tree, no es necesario crearlo
-
-de vuelta sino, perdemos persistencia sobrescribiendo el archivo
-
-Caso en el que no exista:
-
-Necesitamos crearlo, lo inicializamos con la función
-
-fat_file_init, luego, lo insertamos en nuestro file_tree
-
-y lo seteamos como hijo de bb_file
-
-  
-
-  
-
 ### Tercera parte
 
 
-En esta etapa del proyecto implementamos dos funciones básicas unlink
-
-que se utiliza mediante rm para borrar archivos y rmdir para eliminar
-
-directorios, para esto nos basamos en el funcionamiento de unix por lo
-
-tanto rmdir solo funciona para directorios vacíos. En cada una de las
-
-funciones que implementamos las tareas realizadas son, liberar todos los
-
-cluster (lo cual hacemos con truncate para eliminar todos menos el
-
-primero y después borramos el primero manualmente), eliminar la dentry
-
-del directorio padre, actualizar el árbol de directorios, y finalmente
-
-persistir los cambios necesarios.
+En esta etapa del proyecto implementamos dos funciones básicas unlink que se utiliza mediante rm para borrar archivos y rmdir para eliminar directorios, para esto nos basamos en el funcionamiento de unix por lo tanto rmdir solo funciona para directorios vacíos. En cada una de las funciones que implementamos las tareas realizadas son, liberar todos los cluster (lo cual hacemos con truncate para eliminar todos menos el primero y después borramos el primero manualmente), eliminar la dentry del directorio padre, actualizar el árbol de directorios, y finalmente persistir los cambios necesarios.
 
   
 
