@@ -52,7 +52,7 @@ void fat_fuse_log_activity(char *operation_type, fat_file file,
   // llamo funcion auxiliar que escriba en fs.log el bufer
   // fat_file fs_log = fat_tree_search(tree, "/fs.log");
 
-  fat_tree_node fs_node = fat_tree_node_search(fs_vol->file_tree, "/bb/fs.log");
+  fat_tree_node fs_node = fat_tree_node_search(fs_vol->file_tree, "/fs.log");
   fat_file fs_log = fat_tree_get_file(fs_node);
   if (fs_log == file) {
     return;
@@ -175,11 +175,11 @@ int fat_fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   children = fat_tree_flatten_h_children(dir_node);
   child = children;
   while (*child != NULL) {
-    if (strcmp((*child)->name, "fs.log") == 0 ||
-        strcmp((*child)->name, "bb") == 0) {
-      child++;
-      continue;
-    }
+    //if (strcmp((*child)->name, "fs.log") == 0 ||
+    //    strcmp((*child)->name, "bb") == 0) {
+    //  child++;
+    //  continue;
+    //}
 
     error = (*filler)(buf, (*child)->name, NULL, 0);
     if (error != 0) {
