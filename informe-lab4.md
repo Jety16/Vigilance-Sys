@@ -21,7 +21,7 @@ Integrantes :
 1.[Preguntas](##preguntas)
 
 2.[Explicación por partes](##Explicación-por-partes)
-	[Primera parte](###primera-parte)
+​	[Primera parte](###primera-parte)
 
 ​	[Segunda parte](###segunda-parte)
 
@@ -34,9 +34,8 @@ Integrantes :
 ## Preguntas
 
 1.  Cuando se ejecuta el main con la opción -d, ¿qué se está mostrando en la pantalla?
-    
 
--d habilita una opción de debug donde básicamente podemos ver un archivo de log que hace verboso el funcionamiento de nuestro sistema de archivos, podemos mantener este archivo comunicándose con nosotros en una terminal mientras utilizamos nuestro volumen en otra terminal distinta.
+    "-d" habilita una opción de debug donde básicamente podemos ver un archivo de log que hace verboso el funcionamiento de nuestro sistema de archivos, podemos mantener este archivo comunicándose con nosotros en una terminal mientras utilizamos nuestro volumen en otra terminal distinta.
 
   
 
@@ -48,18 +47,16 @@ Integrantes :
 
 
 3.  ¿Dónde se guardan las entradas de directorio? ¿Cuántos archivos puede tener adentro un directorio en FAT32?  
+    
     Las entradas de directorio se guardan en los cluster que ocupa cada directorio, en la versión que se nos entrega de FAT32 los directorios pueden tener como máximo 16 archivos ya que cada cluster es de 512 bytes y cada entrada de directorio ocupa 32 bytes y los directorios no ocupan más de un cluster
     
 
   
 
 4.  Cuando se ejecuta el comando como ls -l, el sistema operativo, ¿llama a algún programa de usuario? ¿A alguna llamada al sistema? ¿Cómo se conecta esto con FUSE? ¿Qué funciones de su código se ejecutan finalmente?  
-    Ls se ejecuta a través de la función de FUSE fat_fuse_readdir la cual utiliza fat_fuse_read_children y devuelve la información sobre los archivos que viven en nuestro volumen en forma de array.  
-    Para generar esta array lo que debemos hacer es leer cada uno de los hijos de nuestro volumen; iterandolos en la funcion h_tree_flatten_h_children y rellenando el array.  
-    No llama a programas de usuario, ni llamadas al sistema.
     
-
-para ocultar nuestros archivos debemos ignorar los hijos que correspondan a bb y a fs.log.
+    Ls se ejecuta a través de la función de FUSE fat_fuse_readdir la cual utiliza fat_fuse_read_children y devuelve la información sobre los archivos que viven en nuestro volumen en forma de array. Para generar esta array lo que debemos hacer es leer cada uno de los hijos de nuestro volumen; iterandolos en la funcion h_tree_flatten_h_children y rellenando el array. No llama a programas de usuario, ni llamadas al sistema.
+      Para ocultar nuestros archivos debemos ignorar los hijos que correspondan a bb y a fs.log.
 
   
 
@@ -67,13 +64,13 @@ para ocultar nuestros archivos debemos ignorar los hijos que correspondan a bb y
 5.  ¿Por qué tienen que escribir las entradas de directorio manualmente pero no tienen que guardar la tabla FAT cada vez que la modifican?
     
 
-A diferencia de las dentries la tabla fat está mapeada en memoria para un acceso más eficiente y luego, se puede persistir para mantener los cambios realizados mientras utilizamos el volumen. Incluso podemos chequear cambios con la copia de fat que se encuentra a disposición del file system para un mejorar la seguridad de la persistencia de los datos, mientras que por otro lado las dentries necesitan ser escritas en los cluster que se encuentran en disco para un correcto funcionamiento del sistema.
+    A diferencia de las dentries la tabla fat está mapeada en memoria para un acceso más eficiente y luego, se puede persistir para mantener los cambios realizados mientras utilizamos el volumen. Incluso podemos chequear cambios con la copia de fat que se encuentra a disposición del file system para un mejorar la seguridad de la persistencia de los datos, mientras que por otro lado las dentries necesitan ser escritas en los cluster que se encuentran en disco para un correcto funcionamiento del sistema.
 
 
 6.  Para los sistemas de archivos FAT32, la tabla FAT, ¿siempre tiene el mismo tamaño? En caso de que sí, ¿qué tamaño tiene?
     
 
-Durante la ejecución la tabla fat tiene siempre el mismo tamaño y ocupa en FAT32 la cantidad de cluster que tenemos multiplicado por los 32 bits por entrada. Sin embargo la cantidad de cluster puede variar según la arquitectura donde montemos nuestra imagen por lo tanto el tamaño de la fat puede ser diferente entre dispositivos diferentes.
+    Durante la ejecución la tabla fat tiene siempre el mismo tamaño y ocupa en FAT32 la cantidad de cluster que tenemos multiplicado por los 32 bits por entrada. Sin embargo la cantidad de cluster puede variar según la arquitectura donde montemos nuestra imagen por lo tanto el tamaño de la fat puede ser diferente entre dispositivos diferentes.
 
   
 
