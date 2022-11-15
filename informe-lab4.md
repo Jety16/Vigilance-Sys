@@ -42,8 +42,9 @@ Integrantes :
 
 2.  ¿Hay alguna manera de saber el nombre del archivo guardado en el cluster 157?
     
+    Podría lograrse esto pero necesitariamos utilizar la fat table para luego aplicar algunas funciones y tener acceso finalmente a la entrada de la tabla correspondiente, la cual nos otorga, entre otras cosas, dos punteros a char: *dir_entry->base_name y dir_entry->extension* los cuales nos dan información sobre el nombre del archivo, este procedimiento es parecido al que utilizamos en la función search_bb_orphan_dir_cluster
 
-  
+ 
 
 
 3.  ¿Dónde se guardan las entradas de directorio? ¿Cuántos archivos puede tener adentro un directorio en FAT32?  
@@ -66,7 +67,7 @@ para ocultar nuestros archivos debemos ignorar los hijos que correspondan a bb y
 5.  ¿Por qué tienen que escribir las entradas de directorio manualmente pero no tienen que guardar la tabla FAT cada vez que la modifican?
     
 
-Porque la información de las dentries puede permanecer con cambios en ram sin ser persistidas para evitar problemas de desempeño mientras que cuando modificamos la tabla fat los cambios se guardan si o si en memoria porque es una estructura de datos muy vulnerable que puede modificar el funcionamiento de todo nuestro sistema de archivos.  
+A diferencia de las dentries la tabla fat está mapeada en memoria para un acceso más eficiente y luego, se puede persistir para mantener los cambios realizados mientras utilizamos el volumen. Incluso podemos chequear cambios con la copia de fat que se encuentra a disposición del file system para un mejorar la seguridad de la persistencia de los datos, mientras que por otro lado las dentries necesitan ser escritas en los cluster que se encuentran en disco para un correcto funcionamiento del sistema.
 
 
 6.  Para los sistemas de archivos FAT32, la tabla FAT, ¿siempre tiene el mismo tamaño? En caso de que sí, ¿qué tamaño tiene?
