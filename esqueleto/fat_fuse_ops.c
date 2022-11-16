@@ -336,9 +336,11 @@ int fat_fuse_truncate(const char *path, off_t offset) {
     return -errno;
   }
   file = fat_tree_get_file(file_node);
+  fat_error("Truncate: fat_File 'file' from path: %s\n", file->filepath);
   if (fat_file_is_directory(file)) return -EISDIR;
 
   parent = fat_tree_get_parent(file_node);
+  fat_error("Truncate: fat_File 'parent' from path: %s\n", parent->filepath);
   fat_tree_inc_num_times_opened(file_node);
   fat_file_truncate(file, offset, parent);
   return -errno;
@@ -362,6 +364,8 @@ int fat_fuse_unlink(const char *path) {
 
   // mark all clusters as free
   fat_fuse_truncate(path, 0);
+  fat_table_set_next_cluster(file->table, file->start_cluster,
+                             FAT_CLUSTER_FREE);
 
   fat_file parent = fat_tree_get_parent(file_node);
   // parent->dir.nentries--;
@@ -383,8 +387,9 @@ int fat_fuse_rmdir(const char *path) {
   fat_volume vol = get_fat_volume();
   fat_tree_node dir_node = fat_tree_node_search(vol->file_tree, path);
   fat_file dir = fat_tree_get_file(dir_node);
+  GList *children_list = fat_file_read_children(dir);
 
-  if (dir->dir.nentries > 0) {
+  if (g_list_length(children_list) > 0) {
     errno = ENOTEMPTY;
     return -errno;
   }
@@ -393,14 +398,17 @@ int fat_fuse_rmdir(const char *path) {
   fat_fuse_truncate(path, 0);
 
   fat_file parent = fat_tree_get_parent(dir_node);
+  fat_error("RMDIR: El fat_file del parent es: %s\n", dir->name);
 
   // Update parent´s directory and save changes on disk
+  fat_table_set_next_cluster(dir->table, dir->start_cluster, FAT_CLUSTER_FREE);
 
   dir->dentry->base_name[0] = FAT_FILENAME_DELETED_CHAR;
   write_dir_entry(parent, dir);
+  g_list_free(children_list);
 
   // Update directory tree
   vol->file_tree = fat_tree_delete(vol->file_tree, path);
-
+  fat_error("RMDIR: nentries at the end: %u", dir->dir.nentries);
   return -errno;
 }
